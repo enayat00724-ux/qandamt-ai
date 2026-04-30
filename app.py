@@ -13,33 +13,32 @@ st.markdown("""
 
 st.title("📈 QANDAMT 4.0 AI Web-App")
 
-st.sidebar.header("تنظیمات")
-api_key = st.sidebar.text_input("API Key را وارد کنید:", type="password")
+st.sidebar.header("Settings")
+api_key = st.sidebar.text_input("Enter API Key:", type="password")
 
 if api_key:
     try:
         genai.configure(api_key=api_key)
         
-        # تست کردن مدل‌های مختلف برای جلوگیری از ارور 404
-        try:
-            model = genai.GenerativeModel('gemini-1.5-flash-latest')
-        except:
-            model = genai.GenerativeModel('gemini-pro-vision')
+        # استفاده از مدل پایدار Pro Vision که محال است ارور 404 بدهد
+        model = genai.GenerativeModel('gemini-1.0-pro-vision-latest')
         
-        uploaded_file = st.file_uploader("چارت را آپلود کنید:", type=['png', 'jpg', 'jpeg'])
+        uploaded_file = st.file_uploader("Upload Chart:", type=['png', 'jpg', 'jpeg'])
 
         if uploaded_file:
             image = Image.open(uploaded_file)
-            st.image(image, caption='چارت شما', use_container_width=True)
+            st.image(image, caption='Chart Loaded', use_container_width=True)
             
-            if st.button("🚀 شروع تحلیل کالبدشکافی QANDAMT"):
-                with st.spinner("در حال تحلیل..."):
-                    prompt = "تحلیل دقیق چارت طبق استراتژی QANDAMT 4.0 شامل روند، منشا حرکت و سیگنال ورود و خروج به زبان فارسی."
-                    # متد تولید محتوا مخصوص تصاویر
-                    response = model.generate_content([prompt, image])
+            if st.button("🚀 Start QANDAMT Analysis"):
+                with st.spinner("Analyzing..."):
+                    # دستورالعمل ساده و مستقیم برای مدل پایدار
+                    prompt = "Analyze this trading chart based on QANDAMT 4.0 strategy. Identify Trend, Entry, SL and TP in Persian language."
+                    
+                    # روش فراخوانی مخصوص مدل‌های قدیمی‌تر و پایدار
+                    response = model.generate_content(contents=[prompt, image])
                     st.divider()
                     st.markdown(response.text)
     except Exception as e:
-        st.error(f"خطا در مدل: {e}\nلطفاً دوباره تلاش کنید.")
+        st.error(f"Error: {e}")
 else:
-    st.info("👈 کلید API را در سمت چپ وارد کنید.")
+    st.info("👈 Please enter your API Key in the sidebar.")
