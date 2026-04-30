@@ -19,9 +19,7 @@ api_key = st.sidebar.text_input("Enter API Key:", type="password")
 if api_key:
     try:
         genai.configure(api_key=api_key)
-        
-        
-        model = genai.GenerativeModel('gemini-1.0-pro-vision-latest')
+        model = genai.GenerativeModel('gemini-1.5-flash')
         
         uploaded_file = st.file_uploader("Upload Chart:", type=['png', 'jpg', 'jpeg'])
 
@@ -31,9 +29,8 @@ if api_key:
             
             if st.button("🚀 Start QANDAMT Analysis"):
                 with st.spinner("Analyzing..."):
-                    
                     prompt = "Analyze this trading chart based on QANDAMT 4.0 strategy. Identify Trend, Entry, SL and TP in Persian language."
-                                      response = model.generate_content(contents=[prompt, image])
+                    response = model.generate_content([prompt, image])
                     st.divider()
                     st.markdown(response.text)
     except Exception as e:
