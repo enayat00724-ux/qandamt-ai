@@ -1,52 +1,48 @@
 import streamlit as st
-import requests
-import base64
+import google.generativeai as genai
 from PIL import Image
-import io
 
-st.set_page_config(page_title="QANDAMT AI Analyzer", layout="wide")
+st.set_page_config(page_title="QANDAMT AI PRO", layout="wide")
+st.title("📈 QANDAMT 4.0 AI - Multi-Model Version")
 
-st.title("📈 QANDAMT 4.0 AI Web-App")
-
-# تنظیمات سایدبار
 api_key = st.sidebar.text_input("Enter API Key:", type="password")
 
-def analyze_image(api_key, image_bytes):
-    # آدرس مستقیم و بدون واسطه گوگل
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
-    
-    # تبدیل عکس به فرمت قابل فهم برای اینترنت
-    encoded_image = base64.b64encode(image_bytes).decode('utf-8')
-    
-    payload = {
-        "contents": [{
-            "parts": [
-                {"text": "Analyze this trading chart based on QANDAMT 4.0 strategy. Identify Trend, Origin of Move, SL, and TP in Persian language."},
-                {"inline_data": {"mime_type": "image/jpeg", "data": encoded_image}}
-            ]
-        }]
-    }
-    
-    response = requests.post(url, json=payload)
-    return response.json()
-
 if api_key:
+    genai.configure(api_key=api_key)
+    
+    # لیستی از مدل‌ها به ترتیب اولویت برای تست
+    model_names = [
+        'gemini-1.5-flash', 
+        'gemini-1.5-flash-latest', 
+        'gemini-1.0-pro-vision-latest'
+    ]
+    
     uploaded_file = st.file_uploader("Upload Chart:", type=['png', 'jpg', 'jpeg'])
 
     if uploaded_file:
-        image_bytes = uploaded_file.read()
-        st.image(image_bytes, caption='Chart Loaded', use_container_width=True)
+        image = Image.open(uploaded_file)
+        st.image(image, use_container_width=True)
         
-        if st.button("🚀 Start QANDAMT Analysis"):
-            with st.spinner("Connecting directly to Google AI..."):
+        if st.button("🚀 شروع تحلیل ترکیبی"):
+            success = False
+            for m_name in model_names:
                 try:
-                    result = analyze_image(api_key, image_bytes)
-                    # استخراج متن پاسخ از دیتای خام گوگل
-                    answer = result['candidates'][0]['content']['parts'][0]['text']
-                    st.success("تحلیل آماده شد:")
-                    st.markdown(answer)
+                    st.write(f"تلاش با مدل: {m_name}...")
+                    model = genai.GenerativeModel(m_name)
+                    prompt = "تحلیل چارت طبق استراتژی QANDAMT 4.0 به زبان فارسی."
+                    response = model.generate_content([prompt, image])
+                    
+                    st.success(f"✅ تحلیل با مدل {m_name} انجام شد:")
+                    st.markdown(response.text)
+                    success = True
+                    break # اگر یکی جواب داد، بقیه را چک نکن
                 except Exception as e:
-                    st.error("خطا در پاسخ گوگل. احتمالاً کلید API اشتباه است یا محدودیت دارد.")
-                    st.write(result) # برای عیب‌یابی دقیق‌تر
+                    if "404" in str(e):
+                        st.warning(f"مدل {m_name} در دسترس نبود (404).")
+                    else:
+                        st.error(f"خطای دیگر در {m_name}: {e}")
+            
+            if not success:
+                st.error("❌ متاسفانه تمام مدل‌های گوگل ارور 404 دادند. این یعنی API Key شما اجازه دسترسی به بخش 'تصویر' را ندارد.")
 else:
-    st.info("👈 Please enter your API Key in the sidebar.")
+    st.info("👈 کلید API را وارد کنید.")
