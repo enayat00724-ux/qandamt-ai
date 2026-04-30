@@ -20,7 +20,7 @@ if api_key:
     try:
         genai.configure(api_key=api_key)
         
-        # استفاده از مدل پایدار Pro Vision که محال است ارور 404 بدهد
+        
         model = genai.GenerativeModel('gemini-1.0-pro-vision-latest')
         
         uploaded_file = st.file_uploader("Upload Chart:", type=['png', 'jpg', 'jpeg'])
@@ -31,11 +31,9 @@ if api_key:
             
             if st.button("🚀 Start QANDAMT Analysis"):
                 with st.spinner("Analyzing..."):
-                    # دستورالعمل ساده و مستقیم برای مدل پایدار
-                    prompt = "Analyze this trading chart based on QANDAMT 4.0 strategy. Identify Trend, Entry, SL and TP in Persian language."
                     
-                    # روش فراخوانی مخصوص مدل‌های قدیمی‌تر و پایدار
-                    response = model.generate_content(contents=[prompt, image])
+                    prompt = "Analyze this trading chart based on QANDAMT 4.0 strategy. Identify Trend, Entry, SL and TP in Persian language."
+                                      response = model.generate_content(contents=[prompt, image])
                     st.divider()
                     st.markdown(response.text)
     except Exception as e:
