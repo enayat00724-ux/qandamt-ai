@@ -1,48 +1,48 @@
 import streamlit as st
-import google.generativeai as genai
-from PIL import Image
+import streamlit.components.v1 as components
 
-st.set_page_config(page_title="QANDAMT AI PRO", layout="wide")
-st.title("📈 QANDAMT 4.0 AI - Multi-Model Version")
+# تنظیمات صفحه
+st.set_page_config(page_title="QANDAMT 4.0 Dashboard", layout="wide")
 
-api_key = st.sidebar.text_input("Enter API Key:", type="password")
+st.markdown("""
+    <style>
+    .main { background-color: #0e1117; color: white; }
+    .stAlert { border-radius: 10px; background-color: #1a1c24; color: white; border: 1px solid #f0a500; }
+    h1, h2 { color: #f0a500; }
+    </style>
+    """, unsafe_allow_html=True)
 
-if api_key:
-    genai.configure(api_key=api_key)
+st.title("📈 QANDAMT 4.0 AI Dashboard")
+st.subheader("دستیار هوشمند ترید - نسخه دستی (بدون ارور)")
+
+col1, col2 = st.columns([1, 1])
+
+with col1:
+    st.header("۱. دستورالعمل QANDAMT")
+    st.markdown("""
+    <div style="background-color: #1a1c24; padding: 20px; border-radius: 10px; border: 1px solid #333;">
+        <p style="color: #ccc; font-weight: bold; font-size: 1.1em;">
+        متن زیر را کپی کن و در کادر چت جمنای (سمت راست) Paste کن. سپس عکست را در آنجا آپلود کن:
+        </p>
+        <textarea style="width: 100%; height: 250px; background-color: #0e1117; color: #00ff00; border: 1px solid #f0a500; padding: 10px; border-radius: 5px;">
+سلام جمنای! لطفاً این چارت را دقیقاً طبق استراتژی QANDAMT 4.0 تحلیل کن:
+1. جهت اصلی مارکت (Trend) را مشخص کن.
+2. منشاهای حرکت (Origin of Move) را در 8 تا 10 کندل آخر پیدا کن.
+3. ترمزهای قیمتی و نواحی نقدینگی را بررسی کن.
+4. در نهایت یک سیگنال دقیق به این صورت بده:
+   - جهت: (خرید/فروش)
+   - نقطه ورود (Entry):
+   - حد ضرر (Stop Loss):
+   - حد سود (Take Profit):
+تحلیل را به زبان فارسی و با لحن حرفه‌ای بنویس.
+        </textarea>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col2:
+    st.header("۲. جمنای چت")
+    st.warning("⚠️ به دلیل محدودیت‌های گوگل در کشور شما، آپلود مستقیم عکس در اینجا غیرفعال شده است. لطفاً از کادر چت زیر استفاده کنید.")
     
-    # لیستی از مدل‌ها به ترتیب اولویت برای تست
-    model_names = [
-        'gemini-1.5-flash', 
-        'gemini-1.5-flash-latest', 
-        'gemini-1.0-pro-vision-latest'
-    ]
-    
-    uploaded_file = st.file_uploader("Upload Chart:", type=['png', 'jpg', 'jpeg'])
+    # باز کردن چت جمنای در یک فریم داخلی
+    components.iframe("https://gemini.google.com/app", height=600, scrolling=True)
 
-    if uploaded_file:
-        image = Image.open(uploaded_file)
-        st.image(image, use_container_width=True)
-        
-        if st.button("🚀 شروع تحلیل ترکیبی"):
-            success = False
-            for m_name in model_names:
-                try:
-                    st.write(f"تلاش با مدل: {m_name}...")
-                    model = genai.GenerativeModel(m_name)
-                    prompt = "تحلیل چارت طبق استراتژی QANDAMT 4.0 به زبان فارسی."
-                    response = model.generate_content([prompt, image])
-                    
-                    st.success(f"✅ تحلیل با مدل {m_name} انجام شد:")
-                    st.markdown(response.text)
-                    success = True
-                    break # اگر یکی جواب داد، بقیه را چک نکن
-                except Exception as e:
-                    if "404" in str(e):
-                        st.warning(f"مدل {m_name} در دسترس نبود (404).")
-                    else:
-                        st.error(f"خطای دیگر در {m_name}: {e}")
-            
-            if not success:
-                st.error("❌ متاسفانه تمام مدل‌های گوگل ارور 404 دادند. این یعنی API Key شما اجازه دسترسی به بخش 'تصویر' را ندارد.")
-else:
-    st.info("👈 کلید API را وارد کنید.")
