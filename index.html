@@ -3,175 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QANDAMT 4.0 | AI Trading Terminal</title>
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <title>QANDAMT 4.0 | Professional Terminal</title>
     <style>
-        :root { --gold: #C9A84C; --bg: #050505; --card: #0F0F0F; --border: #222; --text: #E0E0E0; }
-        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; overflow-x: hidden; }
-        header { padding: 30px; border-bottom: 1px solid var(--border); text-align: center; }
-        h1 { font-family: 'Syne', sans-serif; font-size: 2.5rem; color: var(--gold); margin: 0; letter-spacing: 2px; }
-        .container { max-width: 1000px; margin: 40px auto; padding: 20px; }
-        .panel { display: none; animation: fadeIn 0.5s ease; }
+        :root { --gold: #C9A84C; --bg: #050505; --card: #0F0F0F; --text: #E0E0E0; }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; text-align: center; }
+        header { padding: 20px; border-bottom: 1px solid #222; }
+        .panel { display: none; padding: 20px; animation: fadeIn 0.4s ease; }
         .panel.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        /* Market Grid */
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px; }
-        .m-card { background: var(--card); border: 1px solid var(--border); padding: 40px; border-radius: 20px; cursor: pointer; transition: 0.3s; text-align: center; }
-        .m-card:hover { border-color: var(--gold); background: #141414; transform: translateY(-5px); }
-        .m-card h2 { color: var(--gold); margin-bottom: 10px; }
-
-        /* Live Heatmaps */
-        .live-box { width: 100%; height: 500px; border: 1px solid var(--border); border-radius: 15px; overflow: hidden; margin-bottom: 20px; }
-        
-        /* Inputs */
-        .upload-zone { border: 2px dashed var(--border); padding: 40px; border-radius: 15px; margin: 20px 0; cursor: pointer; transition: 0.3s; }
-        .upload-zone:hover { border-color: var(--gold); }
-        .btn { background: var(--gold); color: black; padding: 15px 40px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 1rem; }
-        .btn:disabled { background: #444; cursor: not-allowed; }
-        
-        #resultTxt { background: #000; padding: 25px; border-radius: 10px; border-left: 4px solid var(--gold); text-align: left; white-space: pre-wrap; line-height: 1.6; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .btn { background: var(--gold); color: black; padding: 15px 30px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; margin: 10px; }
+        .widget-container { width: 100%; height: 500px; background: #000; border: 1px solid #333; border-radius: 15px; overflow: hidden; position: relative; }
+        input { background: #111; color: #fff; border: 1px solid #444; padding: 12px; border-radius: 5px; width: 250px; margin: 20px 0; font-size: 1rem; }
     </style>
 </head>
 <body>
 
 <header>
-    <h1>QANDAMT <span style="color:white">4.0</span></h1>
-    <p style="color: #666; font-size: 0.9rem;">PROFESSIONAL AI CHART ANALYSIS TERMINAL</p>
+    <h1 style="color: var(--gold); margin: 0;">QANDAMT 4.0</h1>
+    <p>REAL-TIME MARKET ANALYSIS</p>
 </header>
 
-<div class="container">
-    <div id="step1" class="panel active">
-        <h2 style="text-align: center;">Select Your Battleground</h2>
-        <div class="grid">
-            <div class="m-card" onclick="startMarket('crypto')">
-                <div style="font-size: 3rem;">🪙</div>
-                <h2>CRYPTO</h2>
-                <p>Live Coin360 & Bubbles Data</p>
-            </div>
-            <div class="m-card" onclick="startMarket('forex')">
-                <div style="font-size: 3rem;">💱</div>
-                <h2>FOREX / GOLD</h2>
-                <p>Live TV Global Heatmap</p>
-            </div>
-        </div>
-    </div>
+<div id="p1" class="panel active">
+    <h2>Choose Your Market</h2>
+    <button class="btn" onclick="loadMarket('crypto')">CRYPTO HEATMAP (Coin360)</button>
+    <button class="btn" onclick="loadMarket('forex')">FOREX HEATMAP (TradingView)</button>
+</div>
 
-    <div id="step2" class="panel">
-        <div id="heatmap-container" class="live-box"></div>
-        <div style="background: var(--card); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
-            <h3>Asset Identified?</h3>
-            <input type="text" id="assetName" placeholder="Enter Symbol (e.g. BTC or Gold)" style="background: #000; color: white; border: 1px solid var(--border); padding: 12px; border-radius: 5px; width: 200px; margin-bottom: 20px;">
-            <br>
-            <button class="btn" onclick="goToUpload()">Confirm & Next →</button>
+<div id="p2" class="panel">
+    <div id="widget-target" class="widget-container">
         </div>
-    </div>
-
-    <div id="step3" class="panel">
-        <h2 id="targetTitle">Analyzing...</h2>
-        <div class="grid">
-            <div class="upload-zone" onclick="document.getElementById('c1').click()">
-                <p id="t1">📁 Upload 1H Chart (Trend)</p>
-                <input type="file" id="c1" hidden onchange="checkFiles()">
-            </div>
-            <div class="upload-zone" onclick="document.getElementById('c2').click()">
-                <p id="t2">📁 Upload 5M Chart (Entry)</p>
-                <input type="file" id="c2" hidden onchange="checkFiles()">
-            </div>
-        </div>
-        <button id="anaBtn" class="btn" disabled onclick="runAI()">⚡ Run QANDAMT 4.0 Analysis</button>
-    </div>
-
-    <div id="step4" class="panel">
-        <h2 style="color: var(--gold);">SIGNAL GENERATED</h2>
-        <div id="resultTxt">Processing data...</div>
+    <div style="margin-top: 20px;">
+        <input type="text" id="symbolInput" placeholder="Enter Symbol (e.g. BTCUSDT)">
         <br>
-        <button class="btn" onclick="location.reload()">New Analysis</button>
+        <button class="btn" onclick="goStep(3)">Confirm Asset & Next →</button>
     </div>
 </div>
 
+<div id="p3" class="panel">
+    <h2 id="analysisTitle">Analysis Phase</h2>
+    <p>Upload your 1H and 5M charts for the AI to process.</p>
+    </div>
+
 <script>
-    // ⚠️ حتماً کلید خودت را اینجا بگذار
-    const API_KEY = 'AIzaSyBwjp...'; 
+    // ⚠️ API KEY را اینجا قرار بده
+    const API_KEY = 'YOUR_GEMINI_API_KEY';
 
-    let market = '';
-    let asset = '';
-
-    function go(id) {
+    function goStep(n) {
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        window.scrollTo(0,0);
+        document.getElementById('p' + n).classList.add('active');
     }
 
-    function startMarket(m) {
-        market = m;
-        const container = document.getElementById('heatmap-container');
-        if(m === 'crypto') {
-            container.innerHTML = `<iframe src="https://cryptobubbles.net/" style="width:100%; height:100%; border:none;"></iframe>`;
+    function loadMarket(type) {
+        const target = document.getElementById('widget-target');
+        target.innerHTML = ""; // پاکسازی قبلی
+
+        if(type === 'crypto') {
+            // ویجت رسمی Coin360
+            const script = document.createElement('script');
+            script.src = "https://coin360.com/static/js/widget.js";
+            target.appendChild(script);
+            target.innerHTML = `<div class="coin360-heatmap"><a href="https://coin360.com" target="_blank">Coin360 Heatmap</a></div>`;
+            // جایگزین با آی‌فریم مستقیم اگر اسکریپت لود نشد
+            target.innerHTML = `<iframe src="https://coin360.com/widget/map.html?theme=dark" width="100%" height="100%" frameborder="0"></iframe>`;
         } else {
-            container.innerHTML = `<iframe src="https://www.tradingview.com/embed-widget/heatmap/?colorTheme=dark" style="width:100%; height:100%; border:none;"></iframe>`;
-        }
-        go('step2');
-    }
-
-    function goToUpload() {
-        asset = document.getElementById('assetName').value.toUpperCase();
-        if(!asset) return alert("Please enter a symbol!");
-        document.getElementById('targetTitle').innerText = `Analysis: ${asset}`;
-        go('step3');
-    }
-
-    function checkFiles() {
-        const c1 = document.getElementById('c1').files[0];
-        const c2 = document.getElementById('c2').files[0];
-        if(c1) document.getElementById('t1').innerText = "✅ 1H Chart Ready";
-        if(c2) document.getElementById('t2').innerText = "✅ 5M Chart Ready";
-        document.getElementById('anaBtn').disabled = !(c1 && c2);
-    }
-
-    async function runAI() {
-        go('step4');
-        const resBox = document.getElementById('resultTxt');
-        resBox.innerText = "Connecting to Gemini 1.5 Flash...\nReading Market Structure...\nDetecting DNA Range...";
-
-        const f1 = document.getElementById('c1').files[0];
-        const f2 = document.getElementById('c2').files[0];
-
-        const b1 = await toBase64(f1);
-        const b2 = await toBase64(f2);
-
-        const prompt = `Analyze these 2 charts for ${asset} using QANDAMT 4.0 strategy. 
-        Chart 1 (1H) is for Trend/DNA. Chart 2 (5M) is for Entry. 
-        Rules: EMA 9/23 alignment, Power Candle breakout, Risk/Reward 1:1 for Range or 1:3 for Trend. 
-        Provide: Entry Price, Stop Loss (behind Power Candle), and Take Profit. 
-        Language: Persian (Farsi).`;
-
-        try {
-            const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    contents: [{ parts: [
-                        {inline_data: {mime_type: f1.type, data: b1}},
-                        {inline_data: {mime_type: f2.type, data: b2}},
-                        {text: prompt}
-                    ]}]
-                })
+            // ویجت رسمی هیت‌مپ فارکس TradingView
+            const div = document.createElement('div');
+            div.className = "tradingview-widget-container";
+            div.innerHTML = `<div class="tradingview-widget-container__widget"></div>`;
+            const script = document.createElement('script');
+            script.type = "text/javascript";
+            script.src = "https://s3.tradingview.com/external-embedding/embed-widget-forex-heat-map.js";
+            script.async = true;
+            script.innerHTML = JSON.stringify({
+                "width": "100%",
+                "height": "100%",
+                "currencies": ["EUR", "USD", "JPY", "GBP", "CHF", "AUD", "CAD", "NZD"],
+                "isTransparent": false,
+                "colorTheme": "dark",
+                "locale": "en"
             });
-            const d = await r.json();
-            resBox.innerText = d.candidates[0].content.parts[0].text;
-        } catch (e) {
-            resBox.innerText = "Error: API Connection Failed. Check VPN or API Key.";
+            target.appendChild(div);
+            div.appendChild(script);
         }
-    }
-
-    function toBase64(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result.split(',')[1]);
-            reader.onerror = error => reject(error);
-        });
+        goStep(2);
     }
 </script>
 </body>
