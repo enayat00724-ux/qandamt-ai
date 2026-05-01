@@ -3,54 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QANDAMT 4.0 — AI Trading</title>
+    <title>QANDAMT 4.0 | AI Trading Terminal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        :root { --gold:#C9A84C; --bg:#080808; --text:#F0EDE8; }
-        body { background: var(--bg); color: var(--text); font-family: sans-serif; text-align: center; margin: 0; padding: 20px; }
-        .panel { display: none; }
+        :root { --gold: #C9A84C; --bg: #050505; --card: #0F0F0F; --border: #222; --text: #E0E0E0; }
+        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; overflow-x: hidden; }
+        header { padding: 30px; border-bottom: 1px solid var(--border); text-align: center; }
+        h1 { font-family: 'Syne', sans-serif; font-size: 2.5rem; color: var(--gold); margin: 0; letter-spacing: 2px; }
+        .container { max-width: 1000px; margin: 40px auto; padding: 20px; }
+        .panel { display: none; animation: fadeIn 0.5s ease; }
         .panel.active { display: block; }
-        .mkt-card { background: #161616; border: 1px solid #222; padding: 20px; margin: 10px; cursor: pointer; border-radius: 10px; }
-        .btn-g { background: var(--gold); color: #000; padding: 15px 30px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Market Grid */
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px; }
+        .m-card { background: var(--card); border: 1px solid var(--border); padding: 40px; border-radius: 20px; cursor: pointer; transition: 0.3s; text-align: center; }
+        .m-card:hover { border-color: var(--gold); background: #141414; transform: translateY(-5px); }
+        .m-card h2 { color: var(--gold); margin-bottom: 10px; }
+
+        /* Live Heatmaps */
+        .live-box { width: 100%; height: 500px; border: 1px solid var(--border); border-radius: 15px; overflow: hidden; margin-bottom: 20px; }
+        
+        /* Inputs */
+        .upload-zone { border: 2px dashed var(--border); padding: 40px; border-radius: 15px; margin: 20px 0; cursor: pointer; transition: 0.3s; }
+        .upload-zone:hover { border-color: var(--gold); }
+        .btn { background: var(--gold); color: black; padding: 15px 40px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 1rem; }
+        .btn:disabled { background: #444; cursor: not-allowed; }
+        
+        #resultTxt { background: #000; padding: 25px; border-radius: 10px; border-left: 4px solid var(--gold); text-align: left; white-space: pre-wrap; line-height: 1.6; }
     </style>
 </head>
 <body>
 
-    <h1>QANDAMT 4.0</h1>
-    <p>AI-Powered Chart Analysis</p>
+<header>
+    <h1>QANDAMT <span style="color:white">4.0</span></h1>
+    <p style="color: #666; font-size: 0.9rem;">PROFESSIONAL AI CHART ANALYSIS TERMINAL</p>
+</header>
 
-    <div id="p1" class="panel active">
-        <h3>Choose Market:</h3>
-        <div class="mkt-card" onclick="pickMarket('crypto')">🪙 Crypto (Live Bubbles)</div>
-        <div class="mkt-card" onclick="pickMarket('forex')">💱 Forex (Live Heatmap)</div>
+<div class="container">
+    <div id="step1" class="panel active">
+        <h2 style="text-align: center;">Select Your Battleground</h2>
+        <div class="grid">
+            <div class="m-card" onclick="startMarket('crypto')">
+                <div style="font-size: 3rem;">🪙</div>
+                <h2>CRYPTO</h2>
+                <p>Live Coin360 & Bubbles Data</p>
+            </div>
+            <div class="m-card" onclick="startMarket('forex')">
+                <div style="font-size: 3rem;">💱</div>
+                <h2>FOREX / GOLD</h2>
+                <p>Live TV Global Heatmap</p>
+            </div>
+        </div>
     </div>
 
-    <div id="p2" class="panel">
-        <div id="sugLoad">Scanning Market...</div>
-        <div id="sugContent"></div>
-        <button class="btn-g" onclick="goStep(1)">Back</button>
+    <div id="step2" class="panel">
+        <div id="heatmap-container" class="live-box"></div>
+        <div style="background: var(--card); padding: 20px; border-radius: 15px; border: 1px solid var(--border);">
+            <h3>Asset Identified?</h3>
+            <input type="text" id="assetName" placeholder="Enter Symbol (e.g. BTC or Gold)" style="background: #000; color: white; border: 1px solid var(--border); padding: 12px; border-radius: 5px; width: 200px; margin-bottom: 20px;">
+            <br>
+            <button class="btn" onclick="goToUpload()">Confirm & Next →</button>
+        </div>
     </div>
 
-    <script>
-        // ⚠️ کلید خودت را که در عکس بود اینجا بگذار
-        const GEMINI_API_KEY = 'AIzaSyBwjp...'; 
+    <div id="step3" class="panel">
+        <h2 id="targetTitle">Analyzing...</h2>
+        <div class="grid">
+            <div class="upload-zone" onclick="document.getElementById('c1').click()">
+                <p id="t1">📁 Upload 1H Chart (Trend)</p>
+                <input type="file" id="c1" hidden onchange="checkFiles()">
+            </div>
+            <div class="upload-zone" onclick="document.getElementById('c2').click()">
+                <p id="t2">📁 Upload 5M Chart (Entry)</p>
+                <input type="file" id="c2" hidden onchange="checkFiles()">
+            </div>
+        </div>
+        <button id="anaBtn" class="btn" disabled onclick="runAI()">⚡ Run QANDAMT 4.0 Analysis</button>
+    </div>
 
-        function goStep(n) {
-            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-            document.getElementById('p' + n).classList.add('active');
-        }
+    <div id="step4" class="panel">
+        <h2 style="color: var(--gold);">SIGNAL GENERATED</h2>
+        <div id="resultTxt">Processing data...</div>
+        <br>
+        <button class="btn" onclick="location.reload()">New Analysis</button>
+    </div>
+</div>
 
-        async function pickMarket(m) {
-            goStep(2);
-            const content = document.getElementById('sugContent');
-            content.innerHTML = "Loading Live Data...";
-            
-            // نمایش ویجت زنده
-            let widget = "";
-            if(m === 'crypto') widget = `<iframe src="https://cryptobubbles.net/" style="width:100%; height:400px; border:none;"></iframe>`;
-            else widget = `<iframe src="https://www.tradingview.com/embed-widget/heatmap/" style="width:100%; height:400px; border:none;"></iframe>`;
-            
-            content.innerHTML = widget + "<h4>AI analysis is loading based on live data...</h4>";
+<script>
+    // ⚠️ حتماً کلید خودت را اینجا بگذار
+    const API_KEY = 'AIzaSyBwjp...'; 
+
+    let market = '';
+    let asset = '';
+
+    function go(id) {
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        window.scrollTo(0,0);
+    }
+
+    function startMarket(m) {
+        market = m;
+        const container = document.getElementById('heatmap-container');
+        if(m === 'crypto') {
+            container.innerHTML = `<iframe src="https://cryptobubbles.net/" style="width:100%; height:100%; border:none;"></iframe>`;
+        } else {
+            container.innerHTML = `<iframe src="https://www.tradingview.com/embed-widget/heatmap/?colorTheme=dark" style="width:100%; height:100%; border:none;"></iframe>`;
         }
-    </script>
+        go('step2');
+    }
+
+    function goToUpload() {
+        asset = document.getElementById('assetName').value.toUpperCase();
+        if(!asset) return alert("Please enter a symbol!");
+        document.getElementById('targetTitle').innerText = `Analysis: ${asset}`;
+        go('step3');
+    }
+
+    function checkFiles() {
+        const c1 = document.getElementById('c1').files[0];
+        const c2 = document.getElementById('c2').files[0];
+        if(c1) document.getElementById('t1').innerText = "✅ 1H Chart Ready";
+        if(c2) document.getElementById('t2').innerText = "✅ 5M Chart Ready";
+        document.getElementById('anaBtn').disabled = !(c1 && c2);
+    }
+
+    async function runAI() {
+        go('step4');
+        const resBox = document.getElementById('resultTxt');
+        resBox.innerText = "Connecting to Gemini 1.5 Flash...\nReading Market Structure...\nDetecting DNA Range...";
+
+        const f1 = document.getElementById('c1').files[0];
+        const f2 = document.getElementById('c2').files[0];
+
+        const b1 = await toBase64(f1);
+        const b2 = await toBase64(f2);
+
+        const prompt = `Analyze these 2 charts for ${asset} using QANDAMT 4.0 strategy. 
+        Chart 1 (1H) is for Trend/DNA. Chart 2 (5M) is for Entry. 
+        Rules: EMA 9/23 alignment, Power Candle breakout, Risk/Reward 1:1 for Range or 1:3 for Trend. 
+        Provide: Entry Price, Stop Loss (behind Power Candle), and Take Profit. 
+        Language: Persian (Farsi).`;
+
+        try {
+            const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    contents: [{ parts: [
+                        {inline_data: {mime_type: f1.type, data: b1}},
+                        {inline_data: {mime_type: f2.type, data: b2}},
+                        {text: prompt}
+                    ]}]
+                })
+            });
+            const d = await r.json();
+            resBox.innerText = d.candidates[0].content.parts[0].text;
+        } catch (e) {
+            resBox.innerText = "Error: API Connection Failed. Check VPN or API Key.";
+        }
+    }
+
+    function toBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result.split(',')[1]);
+            reader.onerror = error => reject(error);
+        });
+    }
+</script>
 </body>
 </html>
