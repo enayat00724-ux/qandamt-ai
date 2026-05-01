@@ -3,89 +3,129 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QANDAMT 4.0 | Professional Terminal</title>
+    <title>QANDAMT 4.0 Terminal</title>
     <style>
         :root { --gold: #C9A84C; --bg: #050505; --card: #0F0F0F; --text: #E0E0E0; }
-        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; text-align: center; }
+        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; text-align: center; }
         header { padding: 20px; border-bottom: 1px solid #222; }
-        .panel { display: none; padding: 20px; animation: fadeIn 0.4s ease; }
+        .panel { display: none; padding: 20px; }
         .panel.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .btn { background: var(--gold); color: black; padding: 15px 30px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; margin: 10px; }
-        .widget-container { width: 100%; height: 500px; background: #000; border: 1px solid #333; border-radius: 15px; overflow: hidden; position: relative; }
-        input { background: #111; color: #fff; border: 1px solid #444; padding: 12px; border-radius: 5px; width: 250px; margin: 20px 0; font-size: 1rem; }
+        .btn { background: var(--gold); color: black; padding: 15px 30px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin: 10px; }
+        .btn:disabled { background: #444; cursor: not-allowed; }
+        .widget-container { width: 100%; height: 450px; background: #000; border-radius: 15px; overflow: hidden; border: 1px solid #333; }
+        .upload-box { border: 2px dashed #333; padding: 30px; margin: 15px 0; border-radius: 10px; cursor: pointer; }
+        .upload-box:hover { border-color: var(--gold); }
+        #result { background: #111; padding: 20px; border-radius: 10px; text-align: left; white-space: pre-wrap; line-height: 1.6; }
     </style>
 </head>
 <body>
 
 <header>
     <h1 style="color: var(--gold); margin: 0;">QANDAMT 4.0</h1>
-    <p>REAL-TIME MARKET ANALYSIS</p>
+    <p>AI CHART ANALYSIS TERMINAL</p>
 </header>
 
 <div id="p1" class="panel active">
-    <h2>Choose Your Market</h2>
-    <button class="btn" onclick="loadMarket('crypto')">CRYPTO HEATMAP (Coin360)</button>
-    <button class="btn" onclick="loadMarket('forex')">FOREX HEATMAP (TradingView)</button>
+    <h2>Choose Market</h2>
+    <button class="btn" onclick="loadMarket('crypto')">CRYPTO HEATMAP</button>
+    <button class="btn" onclick="loadMarket('forex')">FOREX HEATMAP</button>
 </div>
 
 <div id="p2" class="panel">
-    <div id="widget-target" class="widget-container">
-        </div>
-    <div style="margin-top: 20px;">
-        <input type="text" id="symbolInput" placeholder="Enter Symbol (e.g. BTCUSDT)">
-        <br>
-        <button class="btn" onclick="goStep(3)">Confirm Asset & Next →</button>
-    </div>
+    <div id="widget-target" class="widget-container"></div>
+    <input type="text" id="symbolInput" placeholder="Enter Symbol (e.g. BTC)" style="background:#111; color:white; padding:12px; margin:20px; border:1px solid #444; border-radius:5px;">
+    <br>
+    <button class="btn" onclick="go(3)">Next: Upload Charts →</button>
 </div>
 
 <div id="p3" class="panel">
-    <h2 id="analysisTitle">Analysis Phase</h2>
-    <p>Upload your 1H and 5M charts for the AI to process.</p>
+    <h2 id="targetTitle">Analysis Phase</h2>
+    
+    <div class="upload-box" onclick="document.getElementById('img1').click()">
+        <p id="t1">📁 Click to Upload 1H Chart (Trend)</p>
+        <input type="file" id="img1" hidden onchange="checkFiles()">
     </div>
 
-<script>
-    // ⚠️ API KEY را اینجا قرار بده
-    const API_KEY = 'YOUR_GEMINI_API_KEY';
+    <div class="upload-box" onclick="document.getElementById('img2').click()">
+        <p id="t2">📁 Click to Upload 5M Chart (Entry)</p>
+        <input type="file" id="img2" hidden onchange="checkFiles()">
+    </div>
 
-    function goStep(n) {
+    <button id="runBtn" class="btn" disabled onclick="analyze()">⚡ Run AI DNA Analysis</button>
+</div>
+
+<div id="p4" class="panel">
+    <h2 style="color:var(--gold)">AI SIGNAL</h2>
+    <div id="result">Analyzing markets... please wait.</div>
+    <button class="btn" onclick="location.reload()">Start Over</button>
+</div>
+
+<script>
+    // ⚠️ کلید خودت را حتماً چک کن (AIzaSyBw...)
+    const API_KEY = 'AIzaSyBwjp...'; 
+
+    function go(n) {
         document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
         document.getElementById('p' + n).classList.add('active');
     }
 
     function loadMarket(type) {
         const target = document.getElementById('widget-target');
-        target.innerHTML = ""; // پاکسازی قبلی
-
         if(type === 'crypto') {
-            // ویجت رسمی Coin360
-            const script = document.createElement('script');
-            script.src = "https://coin360.com/static/js/widget.js";
-            target.appendChild(script);
-            target.innerHTML = `<div class="coin360-heatmap"><a href="https://coin360.com" target="_blank">Coin360 Heatmap</a></div>`;
-            // جایگزین با آی‌فریم مستقیم اگر اسکریپت لود نشد
             target.innerHTML = `<iframe src="https://coin360.com/widget/map.html?theme=dark" width="100%" height="100%" frameborder="0"></iframe>`;
         } else {
-            // ویجت رسمی هیت‌مپ فارکس TradingView
-            const div = document.createElement('div');
-            div.className = "tradingview-widget-container";
-            div.innerHTML = `<div class="tradingview-widget-container__widget"></div>`;
-            const script = document.createElement('script');
-            script.type = "text/javascript";
-            script.src = "https://s3.tradingview.com/external-embedding/embed-widget-forex-heat-map.js";
-            script.async = true;
-            script.innerHTML = JSON.stringify({
-                "width": "100%",
-                "height": "100%",
-                "currencies": ["EUR", "USD", "JPY", "GBP", "CHF", "AUD", "CAD", "NZD"],
-                "isTransparent": false,
-                "colorTheme": "dark",
-                "locale": "en"
-            });
-            target.appendChild(div);
-            div.appendChild(script);
+            target.innerHTML = `<iframe src="https://www.tradingview-widget.com/embed-widget/forex-heat-map/?colorTheme=dark" width="100%" height="100%" frameborder="0"></iframe>`;
         }
-        goStep(2);
+        go(2);
+    }
+
+    function checkFiles() {
+        const f1 = document.getElementById('img1').files[0];
+        const f2 = document.getElementById('img2').files[0];
+        if(f1) document.getElementById('t1').innerText = "✅ 1H Chart Ready";
+        if(f2) document.getElementById('t2').innerText = "✅ 5M Chart Ready";
+        document.getElementById('runBtn').disabled = !(f1 && f2);
+    }
+
+    async function analyze() {
+        go(4);
+        const res = document.getElementById('result');
+        const asset = document.getElementById('symbolInput').value || "Asset";
+
+        try {
+            const f1 = document.getElementById('img1').files[0];
+            const f2 = document.getElementById('img2').files[0];
+            const b1 = await toBase64(f1);
+            const b2 = await toBase64(f2);
+
+            const prompt = `Analyze ${asset} using QANDAMT 4.0 strategy. Chart 1 is 1H (DNA/Trend), Chart 2 is 5M (Entry). Check EMA 9/23 and Power Candle. Give Entry, SL, and TP in Persian.`;
+
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    contents: [{ parts: [
+                        {inline_data: {mime_type: f1.type, data: b1}},
+                        {inline_data: {mime_type: f2.type, data: b2}},
+                        {text: prompt}
+                    ]}]
+                })
+            });
+
+            const data = await response.json();
+            res.innerText = data.candidates[0].content.parts[0].text;
+        } catch (e) {
+            res.innerText = "Error: Check API Key or Internet connection.";
+        }
+    }
+
+    function toBase64(file) {
+        return new Promise((r, j) => {
+            const rd = new FileReader();
+            rd.readAsDataURL(file);
+            rd.onload = () => r(rd.result.split(',')[1]);
+            rd.onerror = j;
+        });
     }
 </script>
 </body>
