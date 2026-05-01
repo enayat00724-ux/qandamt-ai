@@ -1,61 +1,103 @@
-import streamlit as st
+<script>
+    // ⚠️ کلید خودت را اینجا وارد کن
+    const GEMINI_API_KEY = 'AIzaSyBwjprg28__18g5MFEeMmwwhQJb_yI7UC4'; 
 
-st.set_page_config(page_title="QANDAMT Professional Terminal", layout="wide")
+    let lang='en', step=1, market=null, asset=null, assetDir=null, c1=null, c2=null, tf='5M', free=7;
 
-st.markdown("""
-    <style>
-    .main { background-color: #0e1117; color: white; }
-    .stTabs [data-baseweb="tab"] { color: white; font-size: 18px; }
-    .instruction-box { background-color: #1a1c24; padding: 15px; border-radius: 10px; border: 1px solid #f0a500; margin-bottom: 10px; }
-    </style>
-    """, unsafe_allow_html=True)
+    // ... (آبجکت T برای ترجمه‌ها همان قبلی بماند) ...
 
-st.title("⚡ ترمینال معاملاتی QANDAMT 4.0")
-
-# ایجاد تب‌های مختلف برای ابزارهای متفاوت
-tab1, tab2, tab3, tab4 = st.tabs(["🔍 تحلیل هوشمند", "📊 هیت‌مپ و بابلز", "💰 قیمت‌های زنده", "📅 تقویم اقتصادی"])
-
-with tab1:
-    col_a, col_b = st.columns([1, 1])
-    with col_a:
-        st.subheader("۱. کپی دستورالعمل مخصوص")
-        option = st.selectbox("نوع دارایی را انتخاب کنید:", ["کریپتو", "طلا (XAUUSD)", "جفت ارز (Forex)"])
+    async function fetchSuggestions(m) {
+        const t = T[lang];
+        document.getElementById('sugLoad').classList.add('show');
+        document.getElementById('sugContent').style.display = 'none';
         
-        if option == "کریپتو":
-            prompt = "تحلیل چارت کریپتو بر اساس QANDAMT 4.0: بررسی نقدینگی صرافی‌ها و ساختار بازار."
-        elif option == "طلا (XAUUSD)":
-            prompt = "تحلیل اختصاصی انس جهانی طلا: بررسی کورولیشن دلار و ترمزهای قیمتی QANDAMT."
-        else:
-            prompt = "تحلیل جفت ارز: بررسی قدرت ارزها و منشاهای حرکت در تایم‌فریم بالا."
+        // پاک کردن ویجت‌های قبلی برای جلوگیری از تکرار
+        const oldWidget = document.getElementById('live-widget-container');
+        if(oldWidget) oldWidget.remove();
+
+        // ایجاد ویجت زنده بر اساس بازار انتخاب شده
+        let widgetHtml = '<div id="live-widget-container" style="margin-bottom:20px;">';
+        if (m === 'crypto') {
+            widgetHtml += `<iframe src="https://cryptobubbles.net/" style="width:100%; height:450px; border:2px solid #222; border-radius:15px;"></iframe>`;
+        } else if (m === 'forex') {
+            widgetHtml += `<iframe src="https://www.tradingview.com/embed-widget/heatmap/?colorTheme=dark" style="width:100%; height:450px; border:2px solid #222; border-radius:15px;"></iframe>`;
+        } else if (m === 'gold') {
+            widgetHtml += `<iframe src="https://www.tradingview.com/widgetembed/?symbol=OANDA%3AXAUUSD&interval=H&theme=dark" style="width:100%; height:450px; border:2px solid #222; border-radius:15px;"></iframe>`;
+        }
+        widgetHtml += '</div>';
+
+        const prompts = {
+            crypto: `Check current top crypto gainers/losers. Identify the strongest coin (1H volume/price) for BUY and the weakest for SELL. Return JSON ONLY: {"buy":{"symbol":"BTC","reason":"..."},"sell":{"symbol":"SOL","reason":"..."}}`,
+            forex: `Check FX heatmap for strongest/weakest pairs. Return JSON ONLY: {"buy":{"symbol":"GBPUSD","reason":"..."},"sell":{"symbol":"USDJPY","reason":"..."}}`,
+            gold: `Analyze gold (XAUUSD) current intraday sentiment. Return JSON ONLY: {"buy":{"symbol":"XAUUSD","reason":"..."},"sell":{"symbol":"XAUUSD","reason":"..."}}`
+        };
+
+        try {
+            // فراخوانی مستقیم API جمنای برای پیدا کردن بهترین ارز
+            const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompts[m] }] }] })
+            });
+            const d = await r.json();
+            let txt = d.candidates[0].content.parts[0].text.replace(/```json|```/g, '').trim();
+            const data = JSON.parse(txt);
+
+            document.getElementById('sugLoad').classList.remove('show');
+            const content = document.getElementById('sugContent');
+            content.style.display = 'block';
+            content.insertAdjacentHTML('afterbegin', widgetHtml); // نمایش هیت‌مپ زنده بالای پیشنهادها
             
-        st.code(prompt, language="text")
-        st.link_button("🔥 ورود به بخش آپلود عکس در جمنای", "https://gemini.google.com/app")
-    
-    with col_b:
-        st.info("💡 راهنما: ابتدا نوع دارایی را انتخاب، متن را کپی و سپس در جمنای عکس را آپلود کنید.")
+            showSuggestions(data);
+        } catch (e) {
+            console.error("API Error:", e);
+            // لود کردن ویجت حتی اگر API خطا داد
+            document.getElementById('sugLoad').classList.remove('show');
+            document.getElementById('sugContent').style.display = 'block';
+            document.getElementById('sugContent').insertAdjacentHTML('afterbegin', widgetHtml);
+        }
+    }
 
-with tab2:
-    st.subheader("نقشه حرارتی بازار و حباب‌های کریپتو")
-    # قرار دادن هیت مپ زنده
-    st.components.v1.iframe("https://coin360.com/", height=500)
-    st.divider()
-    st.components.v1.iframe("https://cryptobubbles.net/", height=500)
+    async function runAnalysis() {
+        if(!c1 || !c2) return;
+        goStep(4);
+        document.getElementById('anaLoad').classList.add('show');
+        
+        const b1 = await b64(c1);
+        const b2 = await b64(c2);
+        
+        const prompt = `Analyze these 2 charts using QANDAMT 4.0 strategy (Tayane). 
+        Asset: ${asset} | Market: ${market}
+        Chart 1 (1H): Find trend, DNA Range, and Power Candles.
+        Chart 2 (${tf}): Find exact entry, SL, and TP. 
+        Follow QANDAMT rules for R:R (1:1 for range, 1:3 for trend).
+        Response language: ${lang === 'fa' ? 'Persian' : 'English'}`;
 
-with tab3:
-    st.subheader("قیمت لحظه‌ای طلا و جفت ارزها")
-    # ویجت تریدینگ ویو برای قیمت‌ها
-    st.components.v1.html("""
-        <div class="tradingview-widget-container">
-          <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js" async>
-          {
-          "container_id": "tv-medium-widget",
-          "symbols": [["Gold", "OANDA:XAUUSD|1D"], ["Bitcoin", "BINANCE:BTCUSDT|1D"], ["Euro/Dollar", "FX:EURUSD|1D"]],
-          "width": "100%", "height": "400", "showChart": true, "locale": "fa"
-          }
-          </script>
-        </div>
-    """, height=450)
+        try {
+            const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [
+                            {inline_data: {mime_type: c1.type, data: b1}},
+                            {inline_data: {mime_type: c2.type, data: b2}},
+                            {text: prompt}
+                        ]
+                    }]
+                })
+            });
+            const d = await r.json();
+            const resTxt = d.candidates[0].content.parts[0].text;
+            
+            document.getElementById('anaLoad').classList.remove('show');
+            document.getElementById('resBox').classList.add('show');
+            document.getElementById('resTxt').textContent = resTxt;
+            // استخراج اعداد سیگنال با Regex (اختیاری برای نمایش در کادرهای پایین)
+        } catch (err) {
+            document.getElementById('anaLoad').textContent = "Error: " + err.message;
+        }
+    }
 
-with tab4:
-    st.subheader("رویدادهای مهم اقتصادی")
-    st.components.v1.iframe("https://sslecal2.forexprostools.com/?columns=exc_flags,exc_currency,exc_importance,exc_actual,exc_forecast,exc_previous&features=datepicker,timezone&countries=1,2,3,4,5,6,7,8,9,10&calType=day&timeZone=55&lang=1", height=500)
+    // سایر توابع کمکی (goStep, b64, restart, etc.) همان کدهای قبلی هستند
+</script>
